@@ -2,9 +2,10 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
+# Configuración de FastAPI
 app = FastAPI(
     title="Hyperstition API",
-    root_path="/",
+    root_path="",  # Cambia esto a una cadena vacía para evitar problemas con la doble barra
     docs_url="/docs",
     redoc_url=None
 )
@@ -27,8 +28,13 @@ async def filter_invalid_requests(request: Request, call_next):
         print(f"Error en middleware: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-# Endpoint /health con manejo de errores
-@app.get("/health", include_in_schema=False)
+# Endpoint raíz
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Hyperstition API"}
+
+# Endpoint /health
+@app.get("/health")
 def health_check():
     try:
         return {"status": "operational"}
@@ -43,5 +49,6 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=8000,
-        log_level="debug"
+        proxy_headers=True,  # Habilita la interpretación de headers de proxy
+        forwarded_allow_ips="*"  # Acepta proxies de cualquier IP
     )
