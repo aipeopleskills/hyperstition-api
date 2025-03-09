@@ -1,0 +1,13 @@
+services: neo4j:
+# 3. Reconstruye y ejecuta image: neo4j:4.4.29-community # Versión exacta y estable
+docker-compose up --build -d environment: NEO4J_AUTH: neo4j/hyperstition NEO4J_dbms_connector_bolt_advertised__address: "neo4j:7687" # Clave 
+      para conexiones internas
+    ports: - "7474:7474" # HTTP - "7687:7687" # Bolt (obligatorio para conexiones desde la API)
+# 4. Verifica en 30 segundos healthcheck:
+sleep 30 && curl -v http://localhost:8000/health      test: ["CMD", "nc", "-zv", "localhost", "7687"]  # Verifica puerto Bolt
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  neo4j_data:
