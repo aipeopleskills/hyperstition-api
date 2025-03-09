@@ -22,3 +22,18 @@ __pycache__/
 # Archivos generados
 *.db
 *.sqlite
+# Testing
+.coverage
+.pytest_cache
+
+# Database
+*.db
+*.sqlite
+
+# Environments
+.env
+.venv
+
+# Logs
+*.log
+logs/
