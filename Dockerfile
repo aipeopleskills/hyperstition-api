@@ -1,4 +1,4 @@
-# # Base image oficial de Python
+# Base image oficial de Python
 FROM python:3.12-slim
 
 # 1. Instalar dependencias del sistema necesarias
@@ -20,13 +20,15 @@ WORKDIR /app
 # 4. Configurar variables de entorno
 ENV PATH="/home/appuser/.local/bin:${PATH}" \
     PYTHONPATH="/app" \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    APP_PORT=8000  
 
-# 5. Copiar e instalar dependencias como root para evitar problemas de permisos
+# Se puede cambiar el puerto en tiempo de ejecución con:
+# docker run -e APP_PORT=9000
+
+# 5. Copiar dependencias y optimizar caché
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt uvicorn fastapi
-RUN pip install --no-cache-dir -r requirements.txt uvicorn fastapi aioredis
-
+RUN pip install --no-cache-dir -r requirements.txt
 
 # 6. Cambiar al usuario no-root
 USER appuser
@@ -34,5 +36,5 @@ USER appuser
 # 7. Copiar el código de la aplicación
 COPY --chown=appuser:appuser . .
 
-# 8. Comando de ejecución (con exec para mejor manejo de señales)
-CMD exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips "*"
+# 8. Comando de ejecución optimizado con exec para mejor manejo de señales
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port $APP_PORT --proxy-headers --forwarded-allow-ips "*"

@@ -1,5 +1,3 @@
-version: "3.8"  # Aunque es obsoleto, puede ayudar en versiones antiguas de Docker
-
 services:
   api:
     build: .

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, APIRouter, Request, HTTPException
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -10,7 +10,38 @@ from app.services.database import check_db_connection, init_db, close_db_connect
 from app.services.cache import redis_cache
 from app.utils.logger import app_logger, security_logger, validation_logger
 
-# Configuración de la aplicación FastAPI
+# Importación de routers
+from app.routers import system, analysis, hyperstition
+
+# Crear un APIRouter global sin prefijo
+global_router = APIRouter()
+
+@global_router.get("/", include_in_schema=False)
+async def root():
+    """Endpoint raíz de la API"""
+    return {"message": "Bienvenido a Hyperstition API", "version": settings.APP_VERSION}
+
+@global_router.get("/health", tags=["Monitoring"], summary="Estado del servicio")
+async def health_check():
+    """Verifica el estado operativo del servicio y sus dependencias"""
+    try:
+        db_status = await check_db_connection()
+        redis_status = redis_cache.client.ping() if settings.USE_REDIS else "disabled"
+
+        return {
+            "status": "operational",
+            "version": settings.APP_VERSION,
+            "dependencies": {
+                "database": db_status,
+                "redis": redis_status,
+                "storage": "ok" if settings.STORAGE_ENABLED else "disabled"
+            }
+        }
+    except Exception as e:
+        app_logger.error(f"Error en health check: {str(e)}")
+        raise HTTPException(status_code=503, detail="Service Unavailable")
+
+# Inicialización de FastAPI
 app = FastAPI(
     title="Hyperstition API",
     version=settings.APP_VERSION,
@@ -18,6 +49,12 @@ app = FastAPI(
     redoc_url=None,
     root_path=settings.ROOT_PATH
 )
+
+# Registrar routers en orden (APIRouter global primero)
+app.include_router(global_router)
+app.include_router(system.router)
+app.include_router(analysis.router)
+app.include_router(hyperstition.router)
 
 # Middlewares esenciales
 app.add_middleware(
@@ -46,9 +83,11 @@ async def security_middleware(request: Request, call_next):
         response = await call_next(request)
 
         # Headers de seguridad
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers.update({
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
+        })
 
         return response
 
@@ -101,31 +140,6 @@ async def shutdown_event():
         await redis_cache.close()
 
     app_logger.info("🔌 Apagado completo")
-
-# Endpoints principales
-@app.get("/", include_in_schema=False)
-async def root():
-    return {"message": "Bienvenido a Hyperstition API", "version": settings.APP_VERSION}
-
-@app.get("/health", tags=["Monitoring"], summary="Estado del servicio")
-async def health_check():
-    """Verifica el estado operativo del servicio y sus dependencias"""
-    try:
-        db_status = await check_db_connection()
-        redis_status = redis_cache.client.ping() if settings.USE_REDIS else "disabled"
-
-        return {
-            "status": "operational",
-            "version": settings.APP_VERSION,
-            "dependencies": {
-                "database": db_status,
-                "redis": redis_status,
-                "storage": "ok" if settings.STORAGE_ENABLED else "disabled"
-            }
-        }
-    except Exception as e:
-        app_logger.error(f"Error en health check: {str(e)}")
-        raise HTTPException(status_code=503, detail="Service Unavailable")
 
 # Ejecución del servidor (solo para desarrollo)
 if __name__ == "__main__":
