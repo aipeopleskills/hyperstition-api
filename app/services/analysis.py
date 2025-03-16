@@ -1,61 +1,99 @@
 import logging
-from app.utils.logger import analysis_logger  # Aseguramos la importación correcta del logger
+from typing import Dict, Any, Optional
+from app.utils.logger import analysis_logger
+from app.models.analysis import SyntacticProphet  # Asumiendo modelo existente
+from app.schemas.hyperstition import FullAnalysisOutput  # Esquema de respuesta
+
+class CognitiveIntegrator:
+    def __init__(self):
+        self.cognitive_weights = {
+            'semantic': 0.4,
+            'syntactic': 0.3,
+            'network': 0.2,
+            'psychoaffective': 0.1
+        }
+
+    def fuse_layers(self, 
+                   hyperstition_data: Dict,
+                   syntactic_data: Dict,
+                   network_data: Dict) -> FullAnalysisOutput:
+        """Integra múltiples capas analíticas en una estructura cognitiva unificada"""
+        
+        # 1. Validación de datos entrantes
+        self._validate_inputs(hyperstition_data, syntactic_data, network_data)
+        
+        # 2. Cálculo de métricas combinadas
+        cognitive_score = self._calculate_cognitive_index(
+            hyperstition_data.get('semantic_score', 0),
+            syntactic_data.get('complexity_score', 0),
+            network_data.get('amplification_risk', 0)
+        )
+        
+        # 3. Construcción de la respuesta unificada
+        return FullAnalysisOutput(
+            hyperstition=hyperstition_data,
+            syntax=syntactic_data,
+            network=network_data,
+            cognitive_profile={
+                "score": cognitive_score,
+                "risk_category": self._classify_risk(cognitive_score)
+            },
+            discourse_style=self._detect_discourse_style(
+                syntactic_data, 
+                hyperstition_data
+            )
+        )
+
+    def _calculate_cognitive_index(self, 
+                                  semantic: float, 
+                                  syntactic: float, 
+                                  network: float) -> float:
+        """Calcula índice cognitivo ponderado"""
+        return round(
+            (semantic * self.cognitive_weights['semantic']) +
+            (syntactic * self.cognitive_weights['syntactic']) +
+            (network * self.cognitive_weights['network']), 2
+        )
 
 class HyperstitionAnalyzer:
     def __init__(self, text: str):
-        if not isinstance(text, str):
-            raise ValueError("El parámetro 'text' debe ser una cadena de texto.")
-
         self.text = text
+        self.integrator = CognitiveIntegrator()
+        self.syntactic_engine = SyntacticProphet()
         self.analysis = {
-            "semantic_layer": {},
-            "psychoaffective_layer": {},
-            "network_layer": {},
-            "contextual_layer": {},
-            "socioecological_layer": {},
-            "hidden_architecture": {},
-            "hiperstition_index": 0.0
+            "base_layers": {},
+            "cognitive_layer": {},
+            "integrated_output": None
         }
 
-    def analyze_semantic_layer(self):
-        analysis_logger.info("Iniciando análisis semántico del texto.")
-        # Implementación real del análisis semántico
-        self.analysis["semantic_layer"] = {
-            "self_fulfilling_loops": [],  # Aquí irán los resultados
-            "mythic_constructs": [],
-            "reality_distortion_score": 0.5  # Temporal
-        }
+    def _analyze_syntax(self) -> Dict:
+        """Ejecuta análisis sintáctico completo"""
+        return self.syntactic_engine.full_analysis(self.text)
 
-    def analyze_psychoaffective_layer(self):
-        analysis_logger.info("Iniciando análisis psicoafectivo del texto.")
-        # Implementación real del análisis psicoafectivo
-        self.analysis["psychoaffective_layer"] = {
-            "emotional_triggers": {},
-            "mobilization_profile": {}
-        }
-
-    def analyze_network_layer(self):
-        analysis_logger.info("Iniciando análisis de propagación en redes.")
-        # Implementación real del análisis de redes
-        self.analysis["network_layer"] = {
-            "virality_vectors": [],
-            "amplification_risk": 0.3  # Temporal
-        }
-
-    def full_analysis(self):
+    def full_analysis(self) -> FullAnalysisOutput:
+        """Flujo completo de análisis integrado"""
         try:
-            analysis_logger.info("Ejecutando análisis hipersticioso completo.")
+            # Capa hipersticiosa
             self.analyze_semantic_layer()
             self.analyze_psychoaffective_layer()
-            self.analyze_network_layer()
-            return self.analysis
+            
+            # Capa de red
+            network_data = self.analyze_network_layer()
+            
+            # Capa sintáctica
+            syntactic_data = self._analyze_syntax()
+            
+            # Integración cognitiva
+            self.analysis["integrated_output"] = self.integrator.fuse_layers(
+                hyperstition_data=self.analysis["base_layers"],
+                syntactic_data=syntactic_data,
+                network_data=network_data
+            )
+            
+            return self.analysis["integrated_output"]
+
         except Exception as e:
-            analysis_logger.error(f"Error en el análisis: {str(e)}")
+            analysis_logger.error(f"Error de integración cognitiva: {str(e)}")
             raise
 
-# Ejemplo de uso
-if __name__ == "__main__":
-    sample_text = "Ejemplo de discurso para analizar."
-    analyzer = HyperstitionAnalyzer(sample_text)
-    resultado = analyzer.full_analysis()
-    print(resultado)
+# ... (Mantener métodos existentes de HyperstitionAnalyzer sin cambios) ... 

@@ -7,6 +7,6 @@ pytest>=7.0.0
 spacy>=3.7.0
 transformers>=4.30.0
 gensim>=4.3.0
-pydantic-settings
+pydantic-settings>=2.0.0
+python-multipart
 es-core-news-md @ https://github.com/explosion/spacy-models/releases/download/es_core_news_md-3.7.0/es_core_news_md-3.7.0-py3-none-any.whl
-pydantic-settings
